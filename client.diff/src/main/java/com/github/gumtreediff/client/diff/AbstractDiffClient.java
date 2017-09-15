@@ -126,6 +126,7 @@ public abstract class AbstractDiffClient<O extends AbstractDiffClient.Options> e
             if (opts.generators.isEmpty())
                 t = Generators.getInstance().getTree(file);
             else
+            	//aqui é onde é retornado o resultado do parser do arquivo
                 t = Generators.getInstance().getTree(opts.generators.get(0), file);
             return t;
         } catch (IOException e) {

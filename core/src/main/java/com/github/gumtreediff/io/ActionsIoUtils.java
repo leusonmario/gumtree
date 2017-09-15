@@ -106,18 +106,34 @@ public final class ActionsIoUtils {
                 ITree src = a.getNode();
                 if (a instanceof Move) {
                     ITree dst = mappings.getDst(src);
-                    fmt.moveAction(src, dst.getParent(), ((Move) a).getPosition());
+                    if (a.getAssociatedMethod() != "") {
+                    	fmt.moveActionWithAssociatedMethod(src, dst.getParent(), ((Move) a).getPosition(), a.getAssociatedMethod());
+                    }else {
+                    	fmt.moveAction(src, dst.getParent(), ((Move) a).getPosition());
+                    }
                 } else if (a instanceof Update) {
                     ITree dst = mappings.getDst(src);
-                    fmt.updateAction(src, dst);
+                    if (a.getAssociatedMethod() != "") {
+                    	fmt.updateActionWithAssociatedMethod(src, dst, a.getAssociatedMethod());
+                    }else {
+                    	fmt.updateAction(src, dst);
+                    }
                 } else if (a instanceof Insert) {
                     ITree dst = a.getNode();
                     if (dst.isRoot())
                         fmt.insertRoot(src);
                     else
-                        fmt.insertAction(src, dst.getParent(), dst.getParent().getChildPosition(dst));
+                    	if (a.getAssociatedMethod() != "") {
+                    		fmt.insertActionWithAssociatedMethod(src, dst.getParent(), dst.getParent().getChildPosition(dst), a.getAssociatedMethod());
+                    	} else {
+                    		fmt.insertAction(src, dst.getParent(), dst.getParent().getChildPosition(dst));
+                    	}
                 } else if (a instanceof Delete) {
-                    fmt.deleteAction(src);
+                    if (a.getAssociatedMethod() != "") {
+                    	fmt.deleteActionWithAssociatedMethod(src, a.getAssociatedMethod());
+                    }else {
+                    	fmt.deleteAction(src);
+                    }
                 }
             }
             fmt.endActions();
@@ -143,12 +159,20 @@ public final class ActionsIoUtils {
         void insertRoot(ITree node) throws Exception;
 
         void insertAction(ITree node, ITree parent, int index) throws Exception;
+        
+        void insertActionWithAssociatedMethod(ITree node, ITree parent, int index, String associatedMethod) throws Exception;
 
         void moveAction(ITree src, ITree dst, int index) throws Exception;
+        
+        void moveActionWithAssociatedMethod(ITree src, ITree dst, int index, String associatedMethod) throws Exception;
 
         void updateAction(ITree src, ITree dst) throws Exception;
+        
+        void updateActionWithAssociatedMethod(ITree src, ITree dst, String associatedMethod) throws Exception;
 
         void deleteAction(ITree node) throws Exception;
+        
+        void deleteActionWithAssociatedMethod(ITree node, String associatedMethod) throws Exception;
 
         void endActions() throws Exception;
     }
@@ -243,6 +267,41 @@ public final class ActionsIoUtils {
         private void end(ITree node) throws XMLStreamException {
 //            writer.writeEndElement();
         }
+
+		@Override
+		public void insertActionWithAssociatedMethod(ITree node, ITree parent, int index, String associatedMethod)
+				throws Exception {
+			start(Insert.class, node);
+            writer.writeAttribute("parent", Integer.toString(parent.getId()));
+            writer.writeAttribute("at", Integer.toString(index));
+            writer.writeAttribute("on Method", associatedMethod);
+            end(node);
+		}
+
+		@Override
+		public void moveActionWithAssociatedMethod(ITree src, ITree dst, int index, String associatedMethod)
+				throws Exception {
+			start(Move.class, src);
+            writer.writeAttribute("parent", Integer.toString(dst.getId()));
+            writer.writeAttribute("at", Integer.toString(index));
+            writer.writeAttribute("on Method", associatedMethod);
+            end(src);
+		}
+
+		@Override
+		public void updateActionWithAssociatedMethod(ITree src, ITree dst, String associatedMethod) throws Exception {
+			start(Update.class, src);
+            writer.writeAttribute("label", dst.getLabel());
+            writer.writeAttribute("on Method", associatedMethod);
+            end(src);
+		}
+
+		@Override
+		public void deleteActionWithAssociatedMethod(ITree node, String associatedMethod) throws Exception {
+			start(Delete.class, node);
+			writer.writeAttribute("on Method", associatedMethod);
+            end(node);
+		}
     }
 
     static class TextFormatter implements ActionFormatter {
@@ -288,21 +347,43 @@ public final class ActionsIoUtils {
         public void insertAction(ITree node, ITree parent, int index) throws Exception {
             write("Insert %s into %s at %d", toS(node), toS(parent), index);
         }
+        
+        @Override
+        public void insertActionWithAssociatedMethod(ITree node, ITree parent, int index, String associatedMethod) throws Exception {
+            write("Insert %s into %s at %d on Method %s", toS(node), toS(parent), index, associatedMethod);
+        }
 
         @Override
         public void moveAction(ITree src, ITree dst, int position) throws Exception {
             write("Move %s into %s at %d", toS(src), toS(dst), position);
         }
-
+        
+        @Override
+		public void moveActionWithAssociatedMethod(ITree src, ITree dst, int position, String associatedMethod)
+				throws Exception {
+        	write("Move %s into %s at %d on Method %s", toS(src), toS(dst), position, associatedMethod);
+			
+		}
+        
         @Override
         public void updateAction(ITree src, ITree dst) throws Exception {
             write("Update %s to %s", toS(src), dst.getLabel());
+        }
+        
+        @Override
+        public void updateActionWithAssociatedMethod(ITree src, ITree dst, String associatedMethod) throws Exception {
+            write("Update %s to %s on Method %s", toS(src), dst.getLabel(), associatedMethod);
         }
 
         @Override
         public void deleteAction(ITree node) throws Exception {
             write("Delete %s", toS(node));
         }
+        
+        @Override
+		public void deleteActionWithAssociatedMethod(ITree node, String associatedMethod) throws Exception {
+        	write("Delete %s on Method %s", toS(node), associatedMethod);
+		}
 
         @Override
         public void endActions() throws Exception {
@@ -316,6 +397,7 @@ public final class ActionsIoUtils {
         private String toS(ITree node) {
             return String.format("%s(%d)", node.toPrettyString(context), node.getId());
         }
+
     }
 
     static class JsonFormatter implements ActionFormatter {
@@ -409,5 +491,40 @@ public final class ActionsIoUtils {
         public void endActions() throws Exception {
             writer.endArray();
         }
+
+		@Override
+		public void insertActionWithAssociatedMethod(ITree node, ITree parent, int index, String associatedMethod)
+				throws Exception {
+			start(Insert.class, node);
+            writer.name("parent").value(parent.getId());
+            writer.name("at").value(index);
+            writer.name("on Method").value(associatedMethod);
+            end(node);
+		}
+
+		@Override
+		public void moveActionWithAssociatedMethod(ITree src, ITree dst, int index, String associatedMethod)
+				throws Exception {
+			start(Move.class, src);
+            writer.name("parent").value(dst.getId());
+            writer.name("at").value(index);
+            writer.name("on Method").value(associatedMethod);
+            end(src);
+		}
+
+		@Override
+		public void updateActionWithAssociatedMethod(ITree src, ITree dst, String associatedMethod) throws Exception {
+			start(Update.class, src);
+            writer.name("label").value(dst.getLabel());
+            writer.name("on Method").value(associatedMethod);
+            end(src);
+		}
+
+		@Override
+		public void deleteActionWithAssociatedMethod(ITree node, String associatedMethod) throws Exception {
+			start(Delete.class, node);
+			writer.name("on Method").value(associatedMethod);
+            end(node);
+		}
     }
 }

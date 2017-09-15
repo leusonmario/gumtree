@@ -107,7 +107,10 @@ public class ActionGenerator {
                 // In order to use the real nodes from the second tree, we
                 // furnish x instead of w and fake that x has the newly
                 // generated ID.
+                // it adds a new Insert Code
+                String methodName = getAssociatedMethod(x);
                 Action ins = new Insert(x, origSrcTrees.get(z.getId()), k);
+                ins.setAssociatedMethod(methodName);
                 actions.add(ins);
                 //System.out.println(ins);
                 origSrcTrees.put(w.getId(), x);
@@ -119,12 +122,19 @@ public class ActionGenerator {
                 if (!x.equals(origDst)) { // TODO => x != origDst // Case of the root
                     ITree v = w.getParent();
                     if (!w.getLabel().equals(x.getLabel())) {
-                        actions.add(new Update(origSrcTrees.get(w.getId()), x.getLabel()));
+                    	// it adds a new update on code
+                    	String methodName = getAssociatedMethod(w);
+                    	Action newUpdate = new Update(origSrcTrees.get(w.getId()), x.getLabel());
+                    	newUpdate.setAssociatedMethod(methodName);
+                        actions.add(newUpdate);
                         w.setLabel(x.getLabel());
                     }
                     if (!z.equals(v)) {
-                        int k = findPos(x);
+                    	String methodName = getAssociatedMethod(w);
+                    	int k = findPos(x);
+                        // it adds a new move on code
                         Action mv = new Move(origSrcTrees.get(w.getId()), origSrcTrees.get(z.getId()), k);
+                        mv.setAssociatedMethod(methodName);
                         actions.add(mv);
                         //System.out.println(mv);
                         int oldk = w.positionInParent();
@@ -143,7 +153,11 @@ public class ActionGenerator {
 
         for (ITree w : newSrc.postOrder()) {
             if (!newMappings.hasSrc(w)) {
-                actions.add(new Delete(origSrcTrees.get(w.getId())));
+            	// it add a new delete on code
+            	Action newDelete = new Delete(origSrcTrees.get(w.getId()));
+            	String methodName = getAssociatedMethod(w);
+                newDelete.setAssociatedMethod(methodName);
+            	actions.add(newDelete);
                 //w.getParent().getChildren().remove(w);
             }
         }
@@ -256,6 +270,31 @@ public class ActionGenerator {
         }
 
         return lcs;
+    }
+    
+    private String getAssociatedMethod(ITree parentNode) {
+    	String methodNameParent = "";
+    	try {
+    		ITree newParent = parentNode.getParent();
+        	while(newParent.getType() != 31) {
+        		try {
+            		newParent = newParent.getParent();
+    			} catch (Exception e) {
+    				break;
+    			}
+            }
+        	// and newParent.getType() == 31
+            if (newParent != null) {
+            	for (ITree child : newParent.getChildren()) {
+    				if (child.getType() == 42) {
+    					methodNameParent = child.getLabel();
+    				}
+    			}
+            }
+		} catch (Exception e) {
+			return methodNameParent;
+		}
+        return methodNameParent;
     }
 
 }

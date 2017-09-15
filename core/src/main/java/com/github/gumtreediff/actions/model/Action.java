@@ -26,9 +26,11 @@ import com.github.gumtreediff.tree.ITree;
 public abstract class Action {
 
     protected ITree node;
+    private String associatedMethod;
 
     public Action(ITree node) {
         this.node = node;
+        this.associatedMethod = "";
     }
 
     public ITree getNode() {
@@ -44,4 +46,12 @@ public abstract class Action {
     @Override
     public abstract String toString();
 
+    public void setAssociatedMethod(String method) {
+    	this.associatedMethod = method;
+    }
+    
+    public String getAssociatedMethod() {
+    	return this.associatedMethod;
+    }
+    
 }

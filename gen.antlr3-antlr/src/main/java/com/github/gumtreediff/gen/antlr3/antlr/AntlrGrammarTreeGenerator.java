@@ -20,10 +20,15 @@
 
 package com.github.gumtreediff.gen.antlr3.antlr;
 
-import com.github.gumtreediff.gen.Register;
+import org.antlr.grammar.v3.ANTLRv3Lexer;
+import org.antlr.grammar.v3.ANTLRv3Parser;
+import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.RecognitionException;
+import org.antlr.runtime.RuleReturnScope;
+import org.antlr.runtime.TokenStream;
 
+import com.github.gumtreediff.gen.Register;
 import com.github.gumtreediff.gen.antlr3.AbstractAntlr3TreeGenerator;
-import org.antlr.runtime.*;
 
 @Register(id = "antlr-antlr", accept = "\\.[gG]$")
 public class AntlrGrammarTreeGenerator extends AbstractAntlr3TreeGenerator<ANTLRv3Lexer, ANTLRv3Parser> {

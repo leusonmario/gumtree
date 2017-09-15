@@ -73,4 +73,5 @@ dependencies {
     compile project(':gen.jdt')
     compile project(':gen.js')
     compile project(':gen.ruby')
+    compile group: 'org.openjdk.jmh', name: 'jmh-core', version: '1.19'
 }
